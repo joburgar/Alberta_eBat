@@ -4,7 +4,6 @@ library(randomForest)
 library(tidyverse)
 library(knitr)
 library(reshape2)
-??melt
 ########################################################################################
 
 data_in <- read.csv("Sewage_lagoon_all.csv") #call data into R
@@ -23,8 +22,6 @@ data <- data_sub[complete.cases(data_sub),]
 # keep a record of the filenames in the same order as the data
 filenames_to_keep <- data$Filename
 
-
-
 ######################################################################
 ## need to load models from "RFmodel_ABSpecies.RData"
 load("RFmodel_ABSpecies.RData")
@@ -34,6 +31,8 @@ dataM <- predict(models4, newdata=data[,2:13], "prob") ##use models to predict b
 
 ######################################################################
 ## Aggregating pulses
+source("compute_bat_counts.R")
+
 M1 <- dataM$rf4
 
 M1$Filename <- filenames_to_keep ##add filenames back in
@@ -42,36 +41,14 @@ M1$Filename <- filenames_to_keep ##add filenames back in
 M1$Site <- word(M1$Filename, 1, sep=fixed('_'))
 M1$Date <- word(M1$Filename, 2, sep=fixed('_'))
 
-######################################################################
-# Define functions for computing the category with the highest output probability, and the second and third highest probability. 
-# In the case of ties, an NA value is returned:  
-
-get_most_probable <- function(species, rank){
-  species <- as.character(species)
-  mp <- species[rank == 1];
-  if (length(mp) != 1) {mp <- NA};
-  mp <- as.character(mp)
-  return(mp)
-}
-
-get_second_probable <- function(species, rank){
-  species <- as.character(species)
-  mp <- species[rank == 2];
-  if (length(mp) != 1) {mp <- NA};
-  mp <- as.character(mp)
-  return(mp)
-}
-
-get_third_probable <- function(species, rank){
-  species <- as.character(species)
-  mp <- species[rank == 3];
-  if (length(mp) != 1) {mp <- NA};
-  mp <- as.character(mp)
-  return(mp)
-}
-
-
 bat_data <- M1
 
+## Create output that mimics output from Alberta eBat
+# exception is that counts file removes all calls with <3 pulses rather than attributing to unkown
+# are kept in summary file though
 
+test <- compute_bat_counts_fn(bat_data=bat_data)
 
+# need to consider naming convention - does it matter for how it's uploaded into annual report? Might just need the counts and summary bits (i.e., grepl)
+write.csv(test$bat_counts,"Sewage_Lagoon_counts.csv", row.names=F)
+write.csv(test$bat_summary, "Sewage_Lagoon_summary.csv", row.names=F)
