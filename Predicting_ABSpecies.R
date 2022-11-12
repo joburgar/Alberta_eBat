@@ -1,123 +1,77 @@
-#!/usr/bin/env Rscript
-args = commandArgs(trailingOnly=TRUE)
-
-## need to load models from "RFmodel_ABSpecies.RData"
-load("RFmodel_ABSpecies.RData")
+# Load packages
+library(caret) # currently have version caret_6.0-62.tar installed (2015-11-23 17:35	3.9M)
+library(randomForest)
+library(tidyverse)
+library(knitr)
+library(reshape2)
+??melt
 ########################################################################################
 
-data_in <- read.csv(paste(args[1], "analook.csv", sep="/")) #call data into R - use the csv filename also as part of the output filenames
-#summary(data_in)
-#head(data_in)
-#names(data_in)
+data_in <- read.csv("Sewage_lagoon_all.csv") #call data into R
 
-# data <- data_in[c(5,7:17)] ##create dataframe of only parameters for the model - don't include st, Qual, Pmc, or TBC
-# The python script will do this trimming for us
+# subset to parameters from AnaLook
+data_sub <- data_in[c("FileName","Dur.ms","Fmax.kHz","Fmin.kHz","Fmean.kHz","Tk.ms","Fk.kHz","Quality..","Tc.ms","Fc.kHz","S1.OPS","Sc.OPS")]
 
-#summary(data)
-names(data)
-#table(data_in$Date,data_in$Site)
+# update colnames to reflect AnaLook names
+colnames(data_sub) <- c("Filename","Dur","Fmax","Fmin","Fmean","Tk","Fk","Qk","Tc","Fc","S1","Sc")
+data_sub$Dc <- data_sub$Tc - data_sub$Tk
+data_sub <- data_sub[c("Filename","Dur","Fmax","Fmin","Fmean","Tk","Fk","Qk","Tc","Fc","Dc","S1","Sc")]
 
-######################################################################
-### Set 4
-library(caret) ##load package
-library(randomForest)
+# remove rows that are not complete (blank from filtering in AnabatInsight)
+data <- data_sub[complete.cases(data_sub),]
+
+# keep a record of the filenames in the same order as the data
+filenames_to_keep <- data$Filename
 
 
-rownames(models4)
-
-dataM <- predict(models4, newdata=data_in, "prob") ##use models to predict bat calls
-#testPred <- predict(models4, newdata=data) 
-#lapply(testPred, function (x) x[1:5]) 
-
-write.table(dataM,file=paste(args[1], "M1_analook.csv", sep="/"),sep=",",row.names=F) ##export certainty score csv file
 
 ######################################################################
-## Aggregrating pulses
-library(plyr) ##load package 
+## need to load models from "RFmodel_ABSpecies.RData"
+load("RFmodel_ABSpecies.RData")
 
-M1 <- read.csv(paste(args[1], "M1_analook.csv", sep="/")) ##read back in certainty score csv file
-head(M1)
-M1$Filename <- data_in$Filename ##add columns to M1
-M1$Site <- data_in$Site ##add columns to M1
-M1$Date <- data_in$Date ##add columns to M1
+### run random forest model
+dataM <- predict(models4, newdata=data[,2:13], "prob") ##use models to predict bat calls
 
-write.table(M1,file=paste(args[1], "M1_analook.csv", sep="/"),sep=",",row.names=F) ##export more complete certainty score csv file
+######################################################################
+## Aggregating pulses
+M1 <- dataM$rf4
 
-names(M1)
-nrow(M1)
-head(M1)
-#
-#
-### run through decision tree for bat call predictions - if below certainty score identify the call as "unknown"
-#M1$cs60 <- as.factor(ifelse(M1$rf4.noise>=0.60,"noise",
-#                            ifelse(M1$rf4.EPFU>=0.60,"EPFU",
-#                                   ifelse(M1$rf4.LABO>=0.60,"LABO",
-#                                          ifelse(M1$rf4.LACI>=0.60,"LACI",
-#                                                 ifelse(M1$rf4.LANO>=0.60,"LANO",
-#                                                        ifelse(M1$rf4.MYCA>=0.60,"MYCA",
-#                                                        ifelse(M1$rf4.MYCI>=0.60,"MYCI",
-#                                                               ifelse(M1$rf4.MYEV>=0.60,"MYEV",
-#                                                                      ifelse(M1$rf4.MYLU>=0.60,"MYLU",
-#                                                                            ifelse(M1$rf4.MYSE>=0.60,"MYSE",
-#                                                                                    ifelse(M1$rf4.MYVO>=0.60,"MYVO",
-#                                                                                           ifelse(M1$rf4.EPFU>=0.30 & M1$rf4.EPFU<0.60 & M1$rf4.LANO>=0.30 & M1$rf4.LANO<0.60 ,"EPFU-LANO",
-#                                                                                                  ifelse(M1$rf4.LABO>=0.30 & M1$rf4.LABO<0.60 & M1$rf4.MYLU>=0.30 & M1$rf4.MYLU<0.60 ,"LABO-MYLU",
-#                                                                                                         ifelse(M1$rf4.MYEV>=0.30 & M1$rf4.MYEV<0.60 & M1$rf4.MYSE>=0.30 & M1$rf4.MYSE<0.60 ,"MYEV-MYSE",
-#                                                                                                                ifelse(M1$rf4.MYCI>=0.30 & M1$rf4.MYCI<0.60 | M1$rf4.MYLU>=0.30 & M1$rf4.MYLU<0.60 | M1$rf4.MYVO>=0.30 & M1$rf4.MYVO<0.60 ,"MYOTIS40K","unknown"))))))))))))))))
-#
-#
-#
-##summary(M1)
-##levels(M1$cs60)
-#
-#########################################
-####rf4
-#
-###create the function to aggregate the pulses
-#rf4.fun <- function(x){
-#  tbl <- table(x$cs60)
-#  nmax <- sum(tbl == max(tbl))
-#  if (nmax == 1)
-#    x$rf4.freq <- rep(names(tbl)[which.max(tbl)],nrow(x))
-#  else
-#    x$rf4.freq <- "unknown"
-#  x
-#}
-#
-##nrow(M1)
-#M1.rf4 <- ddply(M1,.(Filename),.fun=rf4.fun) ##apply the function
-#
-##summary(M1.rf4)
-##nrow(M1.rf4)
-#
-#M1.rf4$Frf4.freq <- as.factor(M1.rf4$rf4.freq) ##convert the column to factor variable
-##levels(M1.rf4$Frf4.freq)
-#
-#
-#########################################
-##head(data_in)
-#Filename <-data_in$Filename ##creat Filename vector
-#
-#Fileuniq <- unique(Filename) ##strip out duplicates
-#Fileuniq <-as.data.frame(Fileuniq) ##convert vector into data frame
-##head(Fileuniq)
-##nrow(Fileuniq)
-#
-#SumData <- Fileuniq ##change the name of the dataframe
-##names(SumData)
-##head(SumData)
-#
-#SumData$rf4 <- M1.rf4$Frf4.freq[match(SumData$Fileuniq, M1.rf4$Filename)] ##match bat identificaiton to each unique Filename
-#SumData$rf4 <- as.factor(SumData$rf4) ##convert to factor variable
-#
-#SumData$Site <- M1$Site[match(SumData$Fileuniq, M1$Filename)] ##add in columns
-#SumData$Date <- M1$Date[match(SumData$Fileuniq, M1$Filename)] ##add in columns
-#
-#summary(SumData)
-##levels(SumData$rf4)
-#
-#table(SumData$rf4, SumData$Site)
-##table(SumData$Date, SumData$Site)
-##summary(SumData$Site)
-#
-#write.table(SumData,file=paste(args[1], "sumdata.csv", sep="/"),sep=",",row.names=F) ##export consolidated data as csv file
+M1$Filename <- filenames_to_keep ##add filenames back in
+
+# this bit will need to be changed depending on how people name their files
+M1$Site <- word(M1$Filename, 1, sep=fixed('_'))
+M1$Date <- word(M1$Filename, 2, sep=fixed('_'))
+
+######################################################################
+# Define functions for computing the category with the highest output probability, and the second and third highest probability. 
+# In the case of ties, an NA value is returned:  
+
+get_most_probable <- function(species, rank){
+  species <- as.character(species)
+  mp <- species[rank == 1];
+  if (length(mp) != 1) {mp <- NA};
+  mp <- as.character(mp)
+  return(mp)
+}
+
+get_second_probable <- function(species, rank){
+  species <- as.character(species)
+  mp <- species[rank == 2];
+  if (length(mp) != 1) {mp <- NA};
+  mp <- as.character(mp)
+  return(mp)
+}
+
+get_third_probable <- function(species, rank){
+  species <- as.character(species)
+  mp <- species[rank == 3];
+  if (length(mp) != 1) {mp <- NA};
+  mp <- as.character(mp)
+  return(mp)
+}
+
+
+bat_data <- M1
+
+
+
