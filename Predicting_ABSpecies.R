@@ -40,8 +40,14 @@ create_Alberta_eBat_output <- function(input_data=input_data, input_folder="NABa
   M1$Filename <- filenames_to_keep ##add filenames back in
   
   # this bit will need to be changed depending on how people name their files
+  # try to create it using a way to find the date values in the character string
+  # dat_summary$Time.temp1 <- str_extract(dat_summary$Filename,"_[0-9]{6}.wav") %>% str_sub(2,7)
+  # dat_summary$Time.temp2 <- str_extract(dat_summary$Filename,"[0-9]{2}\\-[0-9]{2}\\-[0-9]{2} [0-9]{2}\\-[0-9]{2}\\-[0-9]{2}") %>% str_sub(-8,-1)
+
   M1$Site <- word(M1$Filename, 1, sep=fixed('_'))
-  M1$Date <- word(M1$Filename, 2, sep=fixed('_'))
+  # M1$Date <- str_extract(M1$Filename,"_[0-9]{8}_") %>% str_sub(2,9)
+  M1$Date <- str_extract(M1$Filename,"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+  
   glimpse(M1)
   
   ## Create output that mimics output from Alberta eBat
@@ -56,13 +62,12 @@ create_Alberta_eBat_output <- function(input_data=input_data, input_folder="NABa
 ########################################################################################
 
 rawdatafiles <- list.files("NABat_2022_raw")
-input_data <- rawdatafiles[2]
+input_data <- rawdatafiles[19]
 
 eBat_output <- create_Alberta_eBat_output(input_data = input_data) 
-glimpse(eBat_output)
 
 # need to consider naming convention - does it matter for how it's uploaded into annual report? Might just need the counts and summary bits (i.e., grepl)
 write.csv(eBat_output$bat_counts,paste0("NABat_2022_output/",str_sub(input_data,1,end=-5),"_counts.csv"), row.names=F)
 write.csv(eBat_output$bat_summary,paste0("NABat_2022_output/",str_sub(input_data,1,end=-5),"_summary.csv"), row.names=F)
 
-rm(data_in, dataM, data_sub, data, M1)
+# rm(data_in, dataM, data_sub, data, M1)
