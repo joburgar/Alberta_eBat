@@ -10,13 +10,17 @@ load("RFmodel_ABSpecies.RData")
 
 ########################################################################################
 
-create_Alberta_eBat_output <- function(input_data=input_data, input_folder="NABat_2022_raw/"){
+create_Alberta_eBat_output <- function(input_data=input_data){
   
-  data_in <- read.csv(paste0(input_folder,input_data)) #call data into R
+  files <- list.files(input_data, # input_data needs to be a path to one or multiple csv files to read in
+                      pattern = ".csv$", recursive = TRUE, full.names = TRUE)
   
+  data_in <- read_csv(files) %>% bind_rows()
+
   head(data_in)
+  names(data_in)
   # subset to parameters from AnaLook
-  data_sub <- data_in[c("FileName","Dur.ms","Fmax.kHz","Fmin.kHz","Fmean.kHz","Tk.ms","Fk.kHz","Quality..","Tc.ms","Fc.kHz","S1.OPS","Sc.OPS")]
+  data_sub <- data_in[c("FileName","Dur ms","Fmax kHz","Fmin kHz","Fmean kHz","Tk ms","Fk kHz","Quality %","Tc ms","Fc kHz","S1 OPS","Sc OPS")]
   
   # update colnames to reflect AnaLook names
   colnames(data_sub) <- c("Filename","Dur","Fmax","Fmin","Fmean","Tk","Fk","Qk","Tc","Fc","S1","Sc")
@@ -61,13 +65,17 @@ create_Alberta_eBat_output <- function(input_data=input_data, input_folder="NABa
 
 ########################################################################################
 
-rawdatafiles <- list.files("NABat_2022_raw")
-input_data <- rawdatafiles[19]
+rawdatafiles <- list.files("NABat_2023_raw")
+rawdatafiles
+input_data <- c("NABat_2023_raw/BNP")
+group <- "BNP"
 
 eBat_output <- create_Alberta_eBat_output(input_data = input_data) 
 
+eBat_output$bat_summary %>% ungroup() %>% count(Site) # check to see the naming convention for each Site
+
 # need to consider naming convention - does it matter for how it's uploaded into annual report? Might just need the counts and summary bits (i.e., grepl)
-write.csv(eBat_output$bat_counts,paste0("NABat_2022_output/",str_sub(input_data,1,end=-5),"_counts.csv"), row.names=F)
-write.csv(eBat_output$bat_summary,paste0("NABat_2022_output/",str_sub(input_data,1,end=-5),"_summary.csv"), row.names=F)
+write.csv(eBat_output$bat_counts ,paste0("NABat_2023_output/",group,"_counts.csv"), row.names=F)
+write.csv(eBat_output$bat_summary,paste0("NABat_2023_output/",group,"_summary.csv"), row.names=F)
 
 # rm(data_in, dataM, data_sub, data, M1)
