@@ -1,5 +1,5 @@
 # Load packages
-library(caret) # currently have version caret_6.0-62.tar installed (2015-11-23 17:35	3.9M)
+library(caret) # currently have version caret_6.0-62.tar installed (2015-11-23 17:35	3.9M) # need older version for script to run
 library(randomForest)
 library(tidyverse)
 library(knitr)
@@ -49,13 +49,13 @@ create_Alberta_eBat_output <- function(input_data=input_data){
   # dat_summary$Time.temp2 <- str_extract(dat_summary$Filename,"[0-9]{2}\\-[0-9]{2}\\-[0-9]{2} [0-9]{2}\\-[0-9]{2}\\-[0-9]{2}") %>% str_sub(-8,-1)
 
   M1$Site <- word(M1$Filename, 1, sep=fixed('_'))
-  # M1$Date <- str_extract(M1$Filename,"_[0-9]{8}_") %>% str_sub(2,9)
-  M1$Date <- str_extract(M1$Filename,"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+  M1$Date <- str_extract(M1$Filename,"_[0-9]{8}_") %>% str_sub(2,9)
+  # M1$Date <- str_extract(M1$Filename,"[0-9]{4}-[0-9]{2}-[0-9]{2}")
   
   glimpse(M1)
   
   ## Create output that mimics output from Alberta eBat
-  # exception is that counts file removes all calls with <3 pulses rather than attributing to unkown
+  # exception is that counts file removes all calls with <3 pulses rather than attributing to unknown
   # are kept in summary file though
   
   eBat_output <- compute_bat_counts_fn(bat_data=M1)
@@ -67,8 +67,8 @@ create_Alberta_eBat_output <- function(input_data=input_data){
 
 rawdatafiles <- list.files("NABat_2023_raw")
 rawdatafiles
-input_data <- c("NABat_2023_raw/BNP")
-group <- "BNP"
+input_data <- c("NABat_2023_raw/ACA")
+group <- "ACA"
 
 eBat_output <- create_Alberta_eBat_output(input_data = input_data) 
 
