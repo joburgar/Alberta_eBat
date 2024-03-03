@@ -67,8 +67,8 @@ create_Alberta_eBat_output <- function(input_data=input_data){
 
 rawdatafiles <- list.files("NABat_2023_raw")
 rawdatafiles
-input_data <- c("NABat_2023_raw/Bayne")
-group <- "Bayne"
+input_data <- c("NABat_2023_raw/MRWCC")
+group <- "MRWCC"
 
 eBat_output <- create_Alberta_eBat_output(input_data = input_data) 
 
