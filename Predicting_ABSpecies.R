@@ -49,8 +49,8 @@ create_Alberta_eBat_output <- function(input_data=input_data){
   # dat_summary$Time.temp2 <- str_extract(dat_summary$Filename,"[0-9]{2}\\-[0-9]{2}\\-[0-9]{2} [0-9]{2}\\-[0-9]{2}\\-[0-9]{2}") %>% str_sub(-8,-1)
 
   M1$Site <- word(M1$Filename, 1, sep=fixed('_'))
-  M1$Date <- str_extract(M1$Filename,"_[0-9]{8}_") %>% str_sub(2,9)
-  # M1$Date <- str_extract(M1$Filename,"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+  # M1$Date <- str_extract(M1$Filename,"_[0-9]{8}_") %>% str_sub(2,9)
+  M1$Date <- str_extract(M1$Filename,"[0-9]{4}-[0-9]{2}-[0-9]{2}")
   
   glimpse(M1)
   
@@ -67,33 +67,33 @@ create_Alberta_eBat_output <- function(input_data=input_data){
 
 rawdatafiles <- list.files("NABat_2023_raw")
 rawdatafiles
-input_data <- c("NABat_2023_raw/Bayne")
-group <- "Baynenew"
+input_data <- c("NABat_2023_raw/WLNP")
+group <- "WLNP_Mobile"
 
 eBat_output <- create_Alberta_eBat_output(input_data = input_data) 
 
 eBat_output$bat_summary %>% ungroup() %>% count(Site) # check to see the naming convention for each Site
 
 ###--- dealing with dates that are different between mobile and stationary surveys (might be worth processing separately next year)
-# site_names <- eBat_output$bat_summary %>% ungroup() %>% count(Site)
-# mobile_names <- site_names %>% filter(Site %in% c("2023-06-16","2023-06-17", "MOBILE-TRANS"))
-# df_mobile <- eBat_output$bat_summary %>% filter(Site %in% unique(mobile_names$Site))
-# df_mobile$Date <- str_extract(df_mobile$Filename,"[0-9]{4}-[0-9]{2}-[0-9]{2}") 
-# df_mobile$Date <- str_remove_all(df_mobile$Date, "[-]")
-# 
-# df_mobile1 <- df_mobile %>% filter(!is.na(Date))
+site_names <- eBat_output$bat_summary %>% ungroup() %>% count(Site)
+mobile_names <- site_names %>% filter(Site %in% c("2023-07-05","2023-07-06", "MOBILE-TRANS"))
+df_mobile <- eBat_output$bat_summary %>% filter(Site %in% unique(mobile_names$Site))
+df_mobile$Date <- str_extract(df_mobile$Filename,"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+df_mobile$Date <- str_remove_all(df_mobile$Date, "[-]")
+
+# df_mobile1 <- df_mobile %>% filter(!is.na(Date)) %>% print(n=28)
 # df_mobile2 <- df_mobile %>% filter(is.na(Date))
-# 
 # df_mobile2$Date <- str_extract(df_mobile2$Filename,"_[0-9]{8}_") %>% str_sub(2,9)
 # df_mobile <- rbind(df_mobile1, df_mobile2)
-# glimpse(df_mobile)
-# df_mobile %>% ungroup() %>% group_by(Site) %>% count(Date)
-# df_mobile <- df_mobile %>% mutate(Site = case_when(Site == "2023-06-16" ~ "JNP-D2-TOWN",
-#                                                    Site == "2023-06-17" ~ "JNP-D2-TOWN",
-#                                                    Date=="20230608" &  Site == "MOBILE-TRANS" ~ "JNP-D1-MIETTE",
-#                                                    TRUE ~ "JNP-D3-TOWN"))
-# 
-# write.csv(df_mobile,paste0("NABat_2023_output/",group,"_summary.csv"), row.names=F)
+
+glimpse(df_mobile)
+df_mobile %>% ungroup() %>% group_by(Site) %>% count(Date)
+df_mobile <- df_mobile %>% mutate(Site = case_when(Site == "2023-07-05" ~ "WLNP-MOBILE1",
+                                                   Site == "2023-07-06" ~ "WLNP-MOBILE2",
+                                                   TRUE ~ as.character(Site)))
+
+
+write.csv(df_mobile,paste0("NABat_2023_output/",group,"_summary.csv"), row.names=F)
 
 
 # need to consider naming convention - does it matter for how it's uploaded into annual report? Might just need the counts and summary bits (i.e., grepl)
